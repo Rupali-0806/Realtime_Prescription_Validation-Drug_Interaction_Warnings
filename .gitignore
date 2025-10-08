@@ -1,0 +1,4 @@
+*.backup
+*.pth
+*.pkl
+__pycache__/
