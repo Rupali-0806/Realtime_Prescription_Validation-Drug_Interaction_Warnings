@@ -5,19 +5,32 @@ import org.apache.spark.sql.types._
 object CombineDatasets {
   def main(args: Array[String]): Unit = {
 
+    // CONFIGURATION: Choose between HDFS or local file system
+    // Set USE_HDFS to false if you don't have HDFS installed
+    val USE_HDFS = true
+    
     val spark = SparkSession.builder()
       .appName("CombineDatasets")
       .master("local[*]")
       .config("spark.sql.adaptive.enabled", "true")
       .config("spark.sql.adaptive.coalescePartitions.enabled", "true")
-      .config("fs.defaultFS", "hdfs://localhost:9000")
+      .config("fs.defaultFS", if (USE_HDFS) "hdfs://localhost:9000" else "file:///")
       .getOrCreate()
 
     import spark.implicits._
 
-    // Input paths - using HDFS files
-    val prescriptionsPath = "hdfs://localhost:9000/input/prescriptions_multi.csv"
-    val interactionsPath = "hdfs://localhost:9000/input/db_drug_interactions.csv"
+    // Input paths - HDFS or local files based on configuration
+    // OPTION 1: Using HDFS (requires HDFS to be running)
+    // OPTION 2: Using local files (change USE_HDFS to false above)
+    val prescriptionsPath = if (USE_HDFS) 
+      "hdfs://localhost:9000/input/prescriptions_multi.csv"
+    else
+      "file:///path/to/your/prescriptions_multi.csv"  // Update this path!
+    
+    val interactionsPath = if (USE_HDFS)
+      "hdfs://localhost:9000/input/db_drug_interactions.csv"
+    else
+      "file:///path/to/your/db_drug_interactions.csv"  // Update this path!
 
     println("Loading datasets...")
     
@@ -117,7 +130,11 @@ object CombineDatasets {
       .show(10, truncate = false)
     
     // Save the complete processed dataset
-    val outputPath = "hdfs://localhost:9000/output/combined_dataset"
+    val outputPath = if (USE_HDFS)
+      "hdfs://localhost:9000/output/combined_dataset"
+    else
+      "file:///path/to/your/output/combined_dataset"  // Update this path!
+    
     println(s"\nSaving complete dataset to: $outputPath")
     
     finalDataset.coalesce(1)
@@ -127,7 +144,11 @@ object CombineDatasets {
       .csv(outputPath)
     
     // Also save as a single CSV file for easier consumption
-    val singleFilePath = "hdfs://localhost:9000/output/combined_dataset_complete.csv"
+    val singleFilePath = if (USE_HDFS)
+      "hdfs://localhost:9000/output/combined_dataset_complete.csv"
+    else
+      "file:///path/to/your/output/combined_dataset_final.csv"  // Update this path!
+    
     finalDataset.coalesce(1)
       .write
       .mode("overwrite")
